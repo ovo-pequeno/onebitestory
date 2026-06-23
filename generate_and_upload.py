@@ -31,7 +31,7 @@ GEN_TYPE = os.environ.get("GEN_TYPE", "ミックス")   # "ミックス"/"スカ
 PRIVACY  = os.environ.get("PRIVACY", "public")      # public/unlisted/private
 MODEL    = os.environ.get("MODEL", "gemini-2.5-flash")
 
-VOICE_SPEED  = 1.15
+VOICE_SPEED  = 1.3
 OUT_DIR      = "out"
 LOG_PATH     = "used_log.json"     # リポジトリにコミットして永続化
 AVOID_RECENT = 40
@@ -66,9 +66,9 @@ META = {
 }
 
 TEXT_COLOR = "white"
-MAIN_STROKE_WIDTH = 18
-FONT_SIZE = 76
-HEADER_FONT_SIZE = 60
+MAIN_STROKE_WIDTH = 10
+FONT_SIZE = 72
+HEADER_FONT_SIZE = 44
 HEADER_Y = 0.02
 CATEGORY_ID = "24"   # エンタメ
 
@@ -194,13 +194,18 @@ def make_scene(text, audio_file, theme, force_duration=None, fontsize=FONT_SIZE)
     narration = AudioFileClip(audio_file)
     duration = force_duration if force_duration else narration.duration + 0.4
     layers = [make_background(duration, theme)]
+
+    # 本文（画面中央）
     main = make_outlined_clip(text, duration, fontsize, theme["font"], theme["stroke"])
-    layers.append(main.set_position(("center", H * 0.42)))
+    layers.append(main.set_position(("center", "center")))
+
+    # ヘッダー（上部に小さく1行で固定）。本文と被らないよう画面上から7%に置く
     header = make_outlined_clip(theme["label"], duration, HEADER_FONT_SIZE,
                                 theme["font"], theme["stroke"],
-                                stroke_width=22).set_position(("center", H * HEADER_Y))
-    layers.append(header)
-    scene = CompositeVideoClip(layers).set_duration(duration)
+                                stroke_width=8)
+    layers.append(header.set_position(("center", int(H * 0.07))))
+
+    scene = CompositeVideoClip(layers, size=(W, H)).set_duration(duration)
     if duration > narration.duration + 0.02:
         narration = CompositeAudioClip([narration]).set_duration(duration)
     return scene.set_audio(narration)
