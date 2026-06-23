@@ -2,8 +2,9 @@ name: daily-long-story
 
 on:
   schedule:
-    # UTC 22:00 = JST 翌07:00。1日1本。
-    - cron: "0 20 * * *"
+    # UTC 19:00 = JST 翌04:00。1日1本。
+    # （daily-shorts の UTC20時の回と被らないよう1時間前にずらしてある）
+    - cron: "0 19 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -42,8 +43,8 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           PRIVACY: "public"          # 最初は unlisted で試すのも手
-          BGM_PATH: "assets/bgm.mp3"   # 作業用BGMを使うならリポジトリに置いてコメント解除
-          BG_IMAGE: "assets/bg.png"    # 背景画像を使うなら同上
+          # BGM_PATH: "assets/bgm.mp3"   # 作業用BGMを使うならリポジトリに置いてコメント解除
+          # BG_IMAGE: "assets/bg.png"    # 背景画像を使うなら同上
         run: python generate_long_story.py
 
       - name: Commit dedup log
@@ -52,4 +53,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add long_used_log.json
           git commit -m "update long dedup log [skip ci]" || echo "no changes"
+          git pull --rebase origin main
           git push
