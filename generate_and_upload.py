@@ -27,7 +27,7 @@ YT_CLIENT_ID     = os.environ["YT_CLIENT_ID"]
 YT_CLIENT_SECRET = os.environ["YT_CLIENT_SECRET"]
 YT_REFRESH_TOKEN = os.environ["YT_REFRESH_TOKEN"]
 
-GEN_TYPE = os.environ.get("GEN_TYPE", "ミックス")   # "ミックス"/"スカッと"/"意味怖"
+GEN_TYPE = os.environ.get("GEN_TYPE", "意味怖")   # "ミックス"/"スカッと"/"意味怖"
 PRIVACY  = os.environ.get("PRIVACY", "public")      # public/unlisted/private
 MODEL    = os.environ.get("MODEL", "gemini-2.5-flash")
 
