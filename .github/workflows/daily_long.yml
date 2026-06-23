@@ -3,7 +3,7 @@ name: daily-long-story
 on:
   schedule:
     # UTC 22:00 = JST 翌07:00。1日1本。
-    - cron: "0 22 * * *"
+    - cron: "0 20 * * *"
   workflow_dispatch: {}
 
 permissions:
