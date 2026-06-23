@@ -45,14 +45,11 @@ AVOID_RECENT = 30
 NUM_CHAPTERS = 7           # 構成の場面数（6〜8が目安。多いほど長尺に）
 CHAPTER_CHARS = "700〜1100字"
 
-# BGM・背景：環境変数で明示されればそれを、なければ既定ファイル名を探す。
-# どちらも「ファイルがあれば使う／無ければ使わない」挙動。
-BGM_PATH = os.environ.get("BGM_PATH", "").strip() or "bgm.mp3"
-BGM_PATH = BGM_PATH if os.path.exists(BGM_PATH) else None
+# BGM・背景：ファイルがあれば使う／無ければ使わない
+BGM_PATH = "assets/bgm.mp3" if os.path.exists("assets/bgm.mp3") else None
 BGM_VOLUME = 0.10
 
-BG_IMAGE = os.environ.get("BG_IMAGE", "").strip() or "bg.jpg"
-BG_IMAGE = BG_IMAGE if os.path.exists(BG_IMAGE) else None
+BG_IMAGE = "assets/bg.jpg" if os.path.exists("assets/bg.jpg") else None
 BG_COLOR = (18, 20, 28)
 
 client = genai.Client(api_key=GEMINI_API_KEY)
