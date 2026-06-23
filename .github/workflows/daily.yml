@@ -4,7 +4,7 @@ on:
   schedule:
     # GitHub Actionsのcronは UTC。 21:00 UTC = 翌 06:00 JST。
     # ※GHAの定刻実行は混雑時に数分〜十数分ずれることがあります。
-    - cron: "0 20,21,2,3,8,9,14 * * *"
+    - cron: "0 20,2,8,14 * * *"
   workflow_dispatch: {}   # 手動でも実行できるようにする（テスト用）
 
 permissions:
