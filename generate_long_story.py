@@ -218,8 +218,25 @@ def make_audio(text, filename):
 # ----- 動画パーツ -----
 def make_background(duration):
     if BG_IMAGE and os.path.exists(BG_IMAGE):
-        return ImageClip(BG_IMAGE).resize((W, H)).set_duration(duration)
+        # Pillowで先に正確にW×Hへリサイズしておく（moviepyのresizeは
+        # 新しいPillowで廃止された Image.ANTIALIAS を呼んで落ちるため回避）。
+        return (ImageClip(_fit_bg(BG_IMAGE))
+                .set_duration(duration))
     return ColorClip(size=(W, H), color=BG_COLOR, duration=duration)
+
+
+_BG_CACHE = None
+def _fit_bg(path):
+    """背景画像をW×Hにリサイズした配列を1度だけ作ってキャッシュする"""
+    global _BG_CACHE
+    if _BG_CACHE is None:
+        from PIL import Image
+        import numpy as np
+        resample = getattr(Image, "Resampling", Image).LANCZOS \
+            if hasattr(Image, "Resampling") else Image.LANCZOS
+        img = Image.open(path).convert("RGB").resize((W, H), resample)
+        _BG_CACHE = np.array(img)
+    return _BG_CACHE
 
 
 def make_outlined_clip(text, duration, fontsize):
