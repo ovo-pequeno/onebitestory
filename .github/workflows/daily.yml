@@ -2,8 +2,7 @@ name: daily-shorts
 
 on:
   schedule:
-    # GitHub Actionsのcronは UTC。 21:00 UTC = 翌 06:00 JST。
-    # ※GHAの定刻実行は混雑時に数分〜十数分ずれることがあります。
+    # UTC 20/2/8/14時 = JST 5/11/17/23時。1日4本。
     - cron: "0 20,2,8,14 * * *"
   workflow_dispatch: {}   # 手動でも実行できるようにする（テスト用）
 
@@ -55,4 +54,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add used_log.json
           git commit -m "update dedup log [skip ci]" || echo "no changes to commit"
+          git pull --rebase origin main
           git push
