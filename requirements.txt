@@ -1,6 +1,7 @@
 google-genai
 gtts
 moviepy==1.0.3
+pillow==9.5.0
 pydub
 google-api-python-client
 google-auth
