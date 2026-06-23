@@ -2,9 +2,9 @@ name: daily-long-story
 
 on:
   schedule:
-    # UTC 19:00 = JST 翌04:00。1日1本。
-    # （daily-shorts の UTC20時の回と被らないよう1時間前にずらしてある）
-    - cron: "0 19 * * *"
+    # UTC 19時台 = JST 翌04時台。1日1本。:00を避けて混雑回避。
+    # （daily-shorts の各回とも分・時がずれるよう調整）
+    - cron: "41 19 * * *"
   workflow_dispatch: {}
 
 permissions:
