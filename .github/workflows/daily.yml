@@ -1,0 +1,58 @@
+name: daily-shorts
+
+on:
+  schedule:
+    # GitHub Actionsのcronは UTC。 21:00 UTC = 翌 06:00 JST。
+    # ※GHAの定刻実行は混雑時に数分〜十数分ずれることがあります。
+    - cron: "0 21 * * *"
+  workflow_dispatch: {}   # 手動でも実行できるようにする（テスト用）
+
+permissions:
+  contents: write          # 被り防止ログのコミットに必要
+
+concurrency:
+  group: daily-shorts      # 多重実行を防ぐ
+  cancel-in-progress: false
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps (ffmpeg / ImageMagick / fonts)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick fonts-noto-cjk wget
+          sudo mkdir -p /usr/share/fonts/truetype/custom
+          sudo wget -q -O /usr/share/fonts/truetype/custom/RocknRollOne-Regular.ttf "https://github.com/google/fonts/raw/main/ofl/rocknrollone/RocknRollOne-Regular.ttf"
+          sudo wget -q -O /usr/share/fonts/truetype/custom/MochiyPopOne-Regular.ttf "https://github.com/google/fonts/raw/main/ofl/mochiypopone/MochiyPopOne-Regular.ttf"
+          sudo fc-cache -f
+          # ImageMagickのパス制限を解除（MoviePyのTextClip用）。IM6/IM7どちらでも対応。
+          sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"\/>//' /etc/ImageMagick-6/policy.xml || true
+          sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"\/>//' /etc/ImageMagick-7/policy.xml || true
+
+      - name: Install python deps
+        run: pip install -r requirements.txt
+
+      - name: Generate and upload
+        env:
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          GEN_TYPE: "ミックス"     # ミックス / スカッと / 意味怖
+          PRIVACY:  "public"       # 最初は unlisted で試すのも手
+        run: python generate_and_upload.py
+
+      - name: Commit dedup log
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add used_log.json
+          git commit -m "update dedup log [skip ci]" || echo "no changes to commit"
+          git push
