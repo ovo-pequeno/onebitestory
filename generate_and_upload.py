@@ -27,7 +27,7 @@ YT_CLIENT_ID     = os.environ["YT_CLIENT_ID"]
 YT_CLIENT_SECRET = os.environ["YT_CLIENT_SECRET"]
 YT_REFRESH_TOKEN = os.environ["YT_REFRESH_TOKEN"]
 
-GEN_TYPE = os.environ.get("GEN_TYPE", "意味怖")   # "ミックス"/"スカッと"/"意味怖"
+GEN_TYPE = os.environ.get("GEN_TYPE", "ミックス")   # "ミックス"/"意味怖"/"後味"/"どんでん返し"
 PRIVACY  = os.environ.get("PRIVACY", "public")      # public/unlisted/private
 MODEL    = os.environ.get("MODEL", "gemini-2.5-flash")
 
@@ -51,18 +51,24 @@ if not os.path.exists(FONT_POP):
 THEME = {
     "意味怖": dict(label="意味が分かると怖い話", font=FONT_SERIF,
                  bg_color=(12, 12, 16), stroke="#AA1E1E"),
-    "スカッと": dict(label="スカッとする話", font=FONT_POP,
-                  bg_color=(18, 52, 86), stroke="#2E9BD6"),
+    "後味": dict(label="ゾッとする後味の悪い話", font=FONT_SERIF,
+               bg_color=(16, 12, 20), stroke="#7A3B8F"),
+    "どんでん返し": dict(label="どんでん返し1分小説", font=FONT_SERIF,
+                   bg_color=(12, 14, 20), stroke="#C9962E"),
 }
 META = {
     "意味怖": dict(
         title_tag="【意味怖】",
-        description="意味が分かると怖い話。あなたは気づけますか？\n\n#意味が分かると怖い話 #意味怖 #怖い話 #ゾッとする話 #Shorts",
-        tags=["意味が分かると怖い話", "意味怖", "怖い話", "ゾッとする話", "考察"]),
-    "スカッと": dict(
-        title_tag="【スカッと】",
-        description="スカッとする話をお届け。\n\n#スカッとする話 #スカッと #因果応報 #Shorts",
-        tags=["スカッとする話", "スカッと", "因果応報", "スカッと話"]),
+        description="意味が分かると怖い話。あなたは気づけますか？\n\n#意味が分かると怖い話 #意味怖 #怖い話 #短編小説 #Shorts",
+        tags=["意味が分かると怖い話", "意味怖", "怖い話", "短編小説", "考察"]),
+    "後味": dict(
+        title_tag="【ゾッとする話】",
+        description="読み終えたあと、ゾッとする後味の悪い話。\n\n#ゾッとする話 #後味の悪い話 #怖い話 #短編小説 #Shorts",
+        tags=["ゾッとする話", "後味の悪い話", "怖い話", "短編小説", "意味怖"]),
+    "どんでん返し": dict(
+        title_tag="【どんでん返し】",
+        description="最後に予想を裏切る、どんでん返しの1分小説。\n\n#どんでん返し #1分小説 #短編小説 #物語 #Shorts",
+        tags=["どんでん返し", "1分小説", "短編小説", "物語", "伏線"]),
 }
 
 TEXT_COLOR = "white"
@@ -90,12 +96,12 @@ def save_log(log):
 
 
 def pick_type(log):
-    if GEN_TYPE in ("スカッと", "意味怖"):
+    types = ["意味怖", "後味", "どんでん返し"]
+    if GEN_TYPE in types:
         return GEN_TYPE
-    # ミックス：これまでの本数が少ない方を選んでバランスをとる
-    k = sum(1 for e in log if e.get("type") == "意味怖")
-    s = sum(1 for e in log if e.get("type") == "スカッと")
-    return "意味怖" if k <= s else "スカッと"
+    # ミックス：これまでの本数が最も少ないジャンルを選んでバランスをとる
+    counts = {t: sum(1 for e in log if e.get("type") == t) for t in types}
+    return min(types, key=lambda t: counts[t])
 
 
 # ----- Geminiでお題＋本文を生成 -----
@@ -113,13 +119,20 @@ def generate_story(story_type, avoid_summaries, max_retries=5):
 ・露骨なグロ・暴力描写は避け、想像力でゾッとさせる。
 ・最後の解説で「実は…」と種明かしする。"""
         extra = '"reveal": "オチの解説。「実は…」で始める（70文字以内）",'
-    else:
-        rule = """あなたは「スカッとする話」のプロ作家です。
-理不尽な相手や嫌な状況が、最後に痛快に逆転・因果応報になる話を1つ創作してください。
-・完全な創作。実在の事件・人物・企業は使わない。
-・過度な暴力や違法な仕返しはNG。あくまで痛快でスッキリする結末に。
-・最後に「スカッと」する逆転のヤマ場を持ってくる。"""
-        extra = '"reveal": "スカッとする逆転・結末のヤマ場（70文字以内）",'
+    elif story_type == "後味":
+        rule = """あなたは「ゾッとする後味の悪い話」のプロ作家です。
+読み終えたあとに嫌な余韻・ゾッとする後味が残る短い話を1つ創作してください。
+・完全な創作。実在の事件・実在の人物・特定地名は使わない。
+・露骨なグロ・暴力描写は避け、想像力でじわっと怖がらせる。
+・はっきりした解説オチにせず、最後の一文でゾッとさせて余韻を残して終わる。"""
+        extra = '"reveal": "最後にゾッとさせる、後味の悪い結びの一文（70文字以内）",'
+    else:  # どんでん返し
+        rule = """あなたは「どんでん返しのある1分小説」のプロ作家です。
+最後に読者の予想を鮮やかに裏切る、どんでん返しの超短編を1つ創作してください。
+・完全な創作。実在の事件・実在の人物・特定地名は使わない。
+・前半は自然に読ませ、最後で展開をひっくり返す（伏線が効くと尚良い）。
+・無理に怖くしなくてよい。驚き・意外性を最優先に。"""
+        extra = '"reveal": "予想を裏切るどんでん返しの結末（70文字以内）",'
 
     prompt = f"""{rule}
 
