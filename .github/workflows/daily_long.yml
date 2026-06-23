@@ -42,8 +42,8 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           PRIVACY: "public"          # 最初は unlisted で試すのも手
-          # BGM_PATH: "assets/bgm.mp3"   # 作業用BGMを使うならリポジトリに置いてコメント解除
-          # BG_IMAGE: "assets/bg.png"    # 背景画像を使うなら同上
+          BGM_PATH: "assets/bgm.mp3"   # 作業用BGMを使うならリポジトリに置いてコメント解除
+          BG_IMAGE: "assets/bg.png"    # 背景画像を使うなら同上
         run: python generate_long_story.py
 
       - name: Commit dedup log
