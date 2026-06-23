@@ -31,7 +31,7 @@ GEN_TYPE = os.environ.get("GEN_TYPE", "ミックス")   # "ミックス"/"スカ
 PRIVACY  = os.environ.get("PRIVACY", "public")      # public/unlisted/private
 MODEL    = os.environ.get("MODEL", "gemini-2.5-flash")
 
-VOICE_SPEED  = 1.3
+VOICE_SPEED  = 1.4
 OUT_DIR      = "out"
 LOG_PATH     = "used_log.json"     # リポジトリにコミットして永続化
 AVOID_RECENT = 40
