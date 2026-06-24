@@ -1,7 +1,7 @@
 name: daily-long-story
 
 on:
-  schedule:
+  # schedule:
     # # UTC 19時台 = JST 翌04時台。1日1本。:00を避けて混雑回避。
     # # （daily-shorts の各回とも分・時がずれるよう調整）
     # - cron: "41 19 * * *"
