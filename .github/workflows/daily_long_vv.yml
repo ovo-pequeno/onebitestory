@@ -44,7 +44,7 @@ jobs:
           YT_CLIENT_ID:     ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          PRIVACY: "unlisted"   # 最初は限定公開で声を確認。OKなら public に
+          PRIVACY: "public"   # 最初は限定公開で声を確認。OKなら public に
         run: python generate_long_story_vv.py
 
       - name: Stop VOICEVOX engine
