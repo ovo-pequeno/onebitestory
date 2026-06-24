@@ -2,12 +2,15 @@ name: daily-shorts
 
 on:
   schedule:
-    # GitHub Actionsのcronは UTC。毎時:00は世界中のcronが集中して
-    # 遅延・スキップされやすいので、分を:00から外してバラけさせている。
-    - cron: "17 20 * * *"   # JST 5:17ごろ
-    - cron: "23 2 * * *"    # JST 11:23ごろ
-    - cron: "19 8 * * *"    # JST 17:19ごろ
-    - cron: "37 14 * * *"   # JST 23:37ごろ
+    - cron: "13 22 * * *"   # JST  7:13
+    - cron: "27 0 * * *"    # JST  9:27
+    - cron: "43 2 * * *"    # JST 11:43
+    - cron: "19 4 * * *"    # JST 13:19
+    - cron: "37 6 * * *"    # JST 15:37
+    - cron: "23 8 * * *"    # JST 17:23
+    - cron: "47 10 * * *"   # JST 19:47
+    - cron: "33 12 * * *"   # JST 21:33
+    - cron: "17 14 * * *"   # JST 23:17
   workflow_dispatch: {}   # 手動でも実行できるようにする（テスト用）
 
 permissions:
