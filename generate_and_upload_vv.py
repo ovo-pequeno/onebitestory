@@ -30,7 +30,7 @@ GEN_TYPE = os.environ.get("GEN_TYPE", "ミックス")   # "ミックス"/"意味
 PRIVACY  = os.environ.get("PRIVACY", "public")      # public/unlisted/private
 MODEL    = os.environ.get("MODEL", "gemini-2.5-flash")
 
-VOICE_SPEED  = 1.4
+VOICE_SPEED  = 1.1
 OUT_DIR      = "out"
 LOG_PATH     = "used_log.json"     # リポジトリにコミットして永続化
 AVOID_RECENT = 40
@@ -39,8 +39,9 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 
 # ----- VOICEVOX設定 -----
 VOICEVOX_URL = "http://127.0.0.1:50021"
-SPEAKER_ID   = 11              # 玄野武宏（ノーマル）。語り手1人・3ジャンル共通
-SPEAKER_NAME = "玄野武宏"      # IDがバージョンで変わっても名前から引き直す
+SPEAKER_ID    = 16             # 九州そら（ノーマル）。語り手1人・3ジャンル共通
+SPEAKER_NAME  = "九州そら"      # IDがバージョンで変わっても名前から引き直す
+SPEAKER_STYLE = "ノーマル"
 
 W, H = 1080, 1920
 FPS = 10
@@ -206,7 +207,7 @@ def wait_voicevox(timeout=180):
 
 
 def resolve_speaker():
-    """エンジンの /speakers から話者名でstyle idを引き直す（IDズレ対策）"""
+    """エンジンの /speakers から「話者名＋スタイル名」でstyle idを引き直す（IDズレ対策）"""
     global SPEAKER_ID
     try:
         sp = requests.get(f"{VOICEVOX_URL}/speakers", timeout=30).json()
@@ -216,9 +217,14 @@ def resolve_speaker():
     for s in sp:
         if SPEAKER_NAME in s.get("name", ""):
             styles = s.get("styles", [])
+            for st in styles:
+                if SPEAKER_STYLE and SPEAKER_STYLE in st.get("name", ""):
+                    SPEAKER_ID = st["id"]
+                    print(f"🎙 語り手={SPEAKER_NAME}/{SPEAKER_STYLE}(id {SPEAKER_ID})")
+                    return
             if styles:
                 SPEAKER_ID = styles[0]["id"]
-                print(f"🎙 語り手={SPEAKER_NAME}(id {SPEAKER_ID})")
+                print(f"🎙 語り手={SPEAKER_NAME}(id {SPEAKER_ID}) ※スタイル既定")
                 return
     print(f"  ⚠️ 話者『{SPEAKER_NAME}』が見つからず。既定ID {SPEAKER_ID} を使用")
 
@@ -320,7 +326,7 @@ def upload(youtube, path, story_type, data):
     body = {
         "snippet": {
             "title": title,
-            "description": meta["description"][:5000],
+            "description": (meta["description"] + "\n\nVOICEVOX:九州そら")[:5000],
             "tags": meta["tags"],
             "categoryId": CATEGORY_ID,
             "defaultLanguage": "ja",
