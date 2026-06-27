@@ -6,12 +6,13 @@
 # Gemini → gTTS（音声）→ MoviePy（動画）→ YouTube API
 # 横型1920x1080・落ち着いたペース・作業用BGM対応・被り防止ログつき
 # =========================================================
-import os, re, json, time, gc, requests
+import os, re, json, time, gc
 from google import genai
 try:
     from google.genai import types as genai_types
 except Exception:
     genai_types = None
+from gtts import gTTS
 from pydub import AudioSegment
 from moviepy.editor import (
     ColorClip, ImageClip, TextClip, CompositeVideoClip,
@@ -52,12 +53,6 @@ BG_IMAGE = "assets/bg.jpg" if os.path.exists("assets/bg.jpg") else None
 BG_COLOR = (18, 20, 28)
 
 client = genai.Client(api_key=GEMINI_API_KEY)
-
-# ----- VOICEVOX設定 -----
-VOICEVOX_URL = "http://127.0.0.1:50021"
-SPEAKER_ID    = 16              # 九州そら（ノーマル）。語り手1人
-SPEAKER_NAME  = "九州そら"
-SPEAKER_STYLE = "ノーマル"
 
 W, H = 1920, 1080
 FPS = 10
@@ -204,63 +199,20 @@ def generate_story(genre, avoid_summaries):
     return {"title": title, "summary": summary, "scenes": all_scenes}
 
 
-# ----- VOICEVOX音声 -----
+# ----- gTTS音声 -----
 def make_audio(text, filename):
     if not re.search(r'[ぁ-んァ-ヴ一-龯a-zA-Z0-9０-９]', text):
         AudioSegment.silent(duration=500).export(filename, format="mp3")
         return filename
-    q = requests.post(f"{VOICEVOX_URL}/audio_query",
-                      params={"text": text, "speaker": SPEAKER_ID}, timeout=60)
-    query = q.json()
-    query["speedScale"] = VOICE_SPEED
-    query["prePhonemeLength"] = 0.1
-    query["postPhonemeLength"] = 0.1
-    s = requests.post(f"{VOICEVOX_URL}/synthesis",
-                      params={"speaker": SPEAKER_ID},
-                      data=json.dumps(query),
-                      headers={"Content-Type": "application/json"}, timeout=180)
-    tmp_wav = "tmp_" + filename.replace(".mp3", ".wav")
-    with open(tmp_wav, "wb") as f:
-        f.write(s.content)
-    seg = AudioSegment.from_wav(tmp_wav)
+    tmp = "tmp_" + filename
+    gTTS(text=text, lang="ja", slow=False).save(tmp)
+    seg = AudioSegment.from_mp3(tmp)
+    if VOICE_SPEED and VOICE_SPEED != 1.0:
+        seg = seg.speedup(playback_speed=VOICE_SPEED)
     seg = seg + AudioSegment.silent(duration=300)
     seg.export(filename, format="mp3")
-    os.remove(tmp_wav)
+    os.remove(tmp)
     return filename
-
-
-def wait_voicevox(timeout=180):
-    for _ in range(timeout // 3):
-        try:
-            if requests.get(f"{VOICEVOX_URL}/version", timeout=5).ok:
-                print("✅ VOICEVOXエンジン応答OK")
-                return True
-        except Exception:
-            pass
-        time.sleep(3)
-    raise RuntimeError("VOICEVOXエンジンが起動しませんでした")
-
-
-def resolve_speaker():
-    global SPEAKER_ID
-    try:
-        sp = requests.get(f"{VOICEVOX_URL}/speakers", timeout=30).json()
-    except Exception as e:
-        print(f"  /speakers取得失敗（既定ID {SPEAKER_ID} のまま）: {e}")
-        return
-    for s in sp:
-        if SPEAKER_NAME in s.get("name", ""):
-            styles = s.get("styles", [])
-            for st in styles:
-                if SPEAKER_STYLE and SPEAKER_STYLE in st.get("name", ""):
-                    SPEAKER_ID = st["id"]
-                    print(f"🎙 語り手={SPEAKER_NAME}/{SPEAKER_STYLE}(id {SPEAKER_ID})")
-                    return
-            if styles:
-                SPEAKER_ID = styles[0]["id"]
-                print(f"🎙 語り手={SPEAKER_NAME}(id {SPEAKER_ID}) ※スタイル既定")
-                return
-    print(f"  ⚠️ 話者『{SPEAKER_NAME}』が見つからず。既定ID {SPEAKER_ID} を使用")
 
 
 # ----- 動画パーツ -----
@@ -285,6 +237,34 @@ def _fit_bg(path):
         img = Image.open(path).convert("RGB").resize((W, H), resample)
         _BG_CACHE = np.array(img)
     return _BG_CACHE
+
+
+def _chunk_text(text, limit=140):
+    """長すぎる1シーンを句点優先で limit 文字以内に分割（caption巨大化＝ImageMagick上限超え防止）"""
+    text = (text or "").strip()
+    if len(text) <= limit:
+        return [text] if text else []
+    sents = re.split(r'(?<=[。！？])', text)
+    chunks, cur = [], ""
+    for s in sents:
+        s = s.strip()
+        if not s:
+            continue
+        while len(s) > limit:
+            cut = s.rfind("、", 0, limit)
+            cut = limit if cut == -1 else cut + 1
+            if cur:
+                chunks.append(cur); cur = ""
+            chunks.append(s[:cut]); s = s[cut:]
+        if len(cur) + len(s) <= limit:
+            cur += s
+        else:
+            if cur:
+                chunks.append(cur)
+            cur = s
+    if cur:
+        chunks.append(cur)
+    return [c for c in chunks if c.strip()]
 
 
 def make_outlined_clip(text, duration, fontsize):
@@ -343,8 +323,11 @@ def build_video(data):
     clip_paths.append(p); os.remove(a); idx += 1
 
     scenes = data["scenes"]
-    for i, line in enumerate(scenes):
-        print(f"  [{i+1}/{len(scenes)}] {line[:24]}...")
+    safe_scenes = []
+    for line in scenes:
+        safe_scenes.extend(_chunk_text(line, 140))
+    for i, line in enumerate(safe_scenes):
+        print(f"  [{i+1}/{len(safe_scenes)}] {line[:24]}...")
         a = make_audio(line, f"a_{idx}.mp3")
         p = f"{TMP_DIR}/clip_{idx:04d}.mp4"
         render_one_scene(line, a, title, p)
@@ -398,8 +381,7 @@ def get_youtube():
 def upload(youtube, path, title):
     description = (
         f"作業用・睡眠用にどうぞ。オリジナルの短編小説をお届けします。\n"
-        f"「{title}」\n\n"
-        "VOICEVOX:九州そら\n\n#短編小説 #朗読 #作業用BGM #睡眠用 #物語"
+        f"「{title}」\n\n#短編小説 #朗読 #作業用BGM #睡眠用 #物語"
     )
     body = {
         "snippet": {
@@ -432,8 +414,6 @@ def upload(youtube, path, title):
 
 
 def main():
-    wait_voicevox()
-    resolve_speaker()
     log = load_log()
     genre = pick_genre(log)
     print(f"📖 ジャンル：{genre}")
