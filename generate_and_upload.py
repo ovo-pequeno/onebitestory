@@ -29,7 +29,7 @@ YT_REFRESH_TOKEN = os.environ["YT_REFRESH_TOKEN"]
 
 GEN_TYPE = os.environ.get("GEN_TYPE", "ミックス")   # "ミックス"/"意味怖"/"後味"/"どんでん返し"
 PRIVACY  = os.environ.get("PRIVACY", "public")      # public/unlisted/private
-MODEL    = os.environ.get("MODEL", "gemini-2.5-flash")
+MODEL    = os.environ.get("MODEL", "gemini-3.5-flash")
 
 VOICE_SPEED  = 1.4
 OUT_DIR      = "out"
@@ -106,7 +106,7 @@ def pick_type(log):
 
 # ----- Geminiでお題＋本文を生成 -----
 def generate_story(story_type, avoid_summaries, max_retries=5):
-    models = [MODEL, "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"]
+    models = [MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
     avoid_text = ""
     if avoid_summaries:
         joined = "\n".join(f"- {s}" for s in avoid_summaries)

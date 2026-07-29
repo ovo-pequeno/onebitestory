@@ -34,7 +34,7 @@ YT_CLIENT_SECRET = os.environ["YT_CLIENT_SECRET"]
 YT_REFRESH_TOKEN = os.environ["YT_REFRESH_TOKEN"]
 
 PRIVACY = os.environ.get("PRIVACY", "public")
-MODEL   = os.environ.get("MODEL", "gemini-2.5-flash")
+MODEL   = os.environ.get("MODEL", "gemini-3.5-flash")
 
 VOICE_SPEED  = 1.12        # 聞き流し向けの自然なテンポ
 OUT_DIR      = "out_long"
@@ -97,7 +97,7 @@ def pick_genre(log):
 
 # ----- Gemini呼び出し（JSON取得・リトライ＆モデルフォールバック） -----
 def gemini_json(prompt, max_retries=5):
-    models = [MODEL, "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"]
+    models = [MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
     cfg = None
     if genai_types:
         cfg = genai_types.GenerateContentConfig(max_output_tokens=8192, temperature=1.05)
